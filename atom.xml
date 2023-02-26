@@ -1,0 +1,1260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>http://ggcodec.github.io</id>
+    <title>haotchen</title>
+    <updated>2023-02-26T14:48:30.534Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="http://ggcodec.github.io"/>
+    <link rel="self" href="http://ggcodec.github.io/atom.xml"/>
+    <subtitle>&lt;h4&gt;学习内容一点一滴,温故而知新&lt;/h4&gt;
+</subtitle>
+    <logo>http://ggcodec.github.io/images/avatar.png</logo>
+    <icon>http://ggcodec.github.io/favicon.ico</icon>
+    <rights>All rights reserved 2023, haotchen</rights>
+    <entry>
+        <title type="html"><![CDATA[Centos7.9搭建和使用Kubernetes]]></title>
+        <id>http://ggcodec.github.io/post/centos79-da-jian-he-shi-yong-kubernetes/</id>
+        <link href="http://ggcodec.github.io/post/centos79-da-jian-he-shi-yong-kubernetes/">
+        </link>
+        <updated>2023-02-25T16:56:34.000Z</updated>
+        <summary type="html"><![CDATA[<p>💡 按照本文档可以快速搭建学习环境下的Kubenetes集群<br>
+😎 对该应用进行学习和初步了解,高效学习从我做起</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>💡 按照本文档可以快速搭建学习环境下的Kubenetes集群<br>
+😎 对该应用进行学习和初步了解,高效学习从我做起</p>
+<!-- more -->
+<h2 id="1-k8s简介">1. k8s简介:</h2>
+<p>Kubernetes(k8s)是一个分布式系统支撑平台,也叫容器编排引擎,具有完备的集群管理能力,多层次的安全防护和准入机制.</p>
+<p>Kubernetes 特性</p>
+<ul>
+<li>
+<p>自动装箱</p>
+<p>构建于容器之上，基于资源依赖及其他约束自动完成容器部署且不影响其可用性，并通过调度机制使工作负 载于不同节点以提升资源利用率。</p>
+</li>
+<li>
+<p>自我修复</p>
+<p>支持容器故障后自动重启，节点故障后重新调度容器，以及其他可用节点，健康状态检查失败后关闭容器并 重新创建等自我修复机制。</p>
+</li>
+<li>
+<p>水平扩展</p>
+<p>支持通过简单命令或UI手动水平扩展，以及基于CPU等资源负载率的自动水平扩展机制。</p>
+</li>
+<li>
+<p>服务发现和负载均衡</p>
+<p>Kubemetes通过其附加组件之一的KubeDNS为系统内置了服务发现功能，它会为每个Service配置DNS服 务，并允许集群内的客户端直接使用此名称发出访问请求。</p>
+</li>
+<li>
+<p>自动发布和回滚</p>
+<p>Kubemetes支持〃灰度〃更新应用程序或其配置信息，它会雌更新过程中应用程序的健康状态，以确保它不 会在同一时刻杀掉所有实例，而此过程中一旦有故障发生，就会立即自动执行回滚操作。</p>
+</li>
+<li>
+<p>存储编排</p>
+<p>Kubernetes支持Pod对象按需自动挂载不同类型的存储系统，包括节点本地存储，云存储等。</p>
+</li>
+<li>
+<p>批量处理执行</p>
+<p>除了服务型应用，Kubernetes还支持批量处理作业，如果需要，一样可以实现容器故障后回复。</p>
+</li>
+</ul>
+<h2 id="2-组件介绍">2. 组件介绍</h2>
+<ol>
+<li>
+<p>Master</p>
+<blockquote>
+<p>Master 节点用于管理和调度Node节点,可以理解为该节点只负责管理不真实干活.</p>
+</blockquote>
+<ul>
+<li>
+<p>API Server: 负责输出RestFul风格的Kubernetes API, 他是发网集群的所有rest操作命令的接口,并负责接受,校验和响应所有REST请求,结果状态被持久存储在ETCD中,因此,APIServer使整个集群的网关.</p>
+</li>
+<li>
+<p>ETCD: k8s集群的所有状态信息都需要持久存储到etcd中,不过,etcd是由基于RAF协议开发的分布式兼职存储,可以用于服务发现,共享配置及一致性保障(如数据库主节点选择,分布式锁等). 因此,etcd是独立的服务组件并不属于k8s集群自身,生产环境中应该以etcd集群的方式运行确保其可用性.</p>
+<p>etcd 不仅能够提供键值数据存储,还提供了监听机制,用于监听和推送变更,Kubernetes集群系统中,etcd中的键值发生变化时会通知到API Server,并由其通过watch API 向客户端输出,基于watch机制 k8s 集群的各个组件实现了高效协同</p>
+</li>
+<li>
+<p>kube-controller-manager: k8s中控制器管理器,集群级别的大多数功能都是由几个被称为控制器的进程执行实现的,这几个进程被集成于kube-controller-manager 守护进程中,由控制器完成的功能主要包括生命周期和API业务逻辑</p>
+</li>
+<li>
+<p>Schedule: k8s适用于部署和管理大规模容器应用的平台,根据集群规模的不同,其托管运行的容器很可能会数以千计,甚至更多,所以在API Server确认Pod对象的创建请求后,便需要由Schedule根据集群内节点的可用资源状态,以及运行的容器资源需求做出调度决策.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Node</p>
+<blockquote>
+<p>Node 节点负责提供运行容器的各种依赖环境,并接受Master管理,每个Node主要由以下的几个组件组成</p>
+</blockquote>
+<ul>
+<li>kubelet: 该组件是运行在节点上的守护进程,他从API Server 接收关于Pod对象的配置新并确保他们处于期望的状态根据Pod对象的配置更新Pod资源,如Pod配置3台nginx容器,当前Pod中只有1个,那Kubelet会创建补齐直到符合配置,Kubelet会在ApiServer上注册当前工作节点,定期向Master汇报节点资源使用情况,并监控容器和节点资源的占用状况.</li>
+<li>容器运行时环境: 是指k8s集群中使用的容器技术,如(Docker...)</li>
+<li>kube-proxy: 每个工作节点都需要运行一个, 它能够按需喂Service资源对象生成iptables或ipvs规则,从而捕获访问当前Service的Cluster的流量并将其转发至正确的服务</li>
+</ul>
+</li>
+<li>
+<p>K8s核心对象</p>
+<table>
+<thead>
+<tr>
+<th>对象名称</th>
+<th>对象描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pod</td>
+<td>Pod资源对象是一种集合了<strong>多个应用容器的管理单元</strong>,将有关联的容器服务放入一个Pod方便网络通信和扩展伸缩</td>
+</tr>
+<tr>
+<td>Controller</td>
+<td>Controller Manager 作为集群内部的管理控制中心,负责集群内的Node,Pod副本,服务端点,命名空间,服务账号,资源定额的管理,当某个Node意外宕机,Controller Manager 会及时发现并执行自动化修复流程,确保集群始终处于预期的工作状态,Controller通过ApiServer 提供的接口实时监控整个集群的Pod对象状态,当发生各种故障导致系统状态异常时,会尝试系统状态修复到期望状态</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>
+<p>Pod特点:</p>
+<pre><code>1. 可管理性:
+	有些容器天生就是需要紧密联系,如java开发的微服务模块需要独立部署但是,这些模块之间需要互相通信调用,放在同一个Pod中,相当于做了个分组易于管理.
+2. 通信和资源共享:
+	Pod中的所有容器使用同一个网络 NameSpace ,即相同的Ip地址和Port空间(地址可以相同port不能冲突),它们可以直接通过loaclhost 通信,并且当k8s为Pod挂在volume时,本质上是对pod中的所有容器挂在volume
+</code></pre>
+</li>
+<li>
+<p>Pod使用方式:</p>
+<ul>
+<li>运行单一容器: <code>one-container-per-Pod</code> 是k8s常见的模型</li>
+<li>运行多个容器: 问题在于那些容器应该放到一个Pod中,容器联系很紧密或者需要多个共享资源的</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="3-k8s集群搭建">3. K8s集群搭建</h2>
+<p>集群类型:</p>
+<table>
+<thead>
+<tr>
+<th>集群类型</th>
+<th style="text-align:center">描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>一主多从</td>
+<td style="text-align:center">一台Master节点和多台Node节点,搭建简单,但是有单机故障风险,适用于测试环境</td>
+</tr>
+<tr>
+<td>多主多从</td>
+<td style="text-align:center">多台Master节点和多台Node节点,搭建麻烦,保障高可用,适用于生产环境</td>
+</tr>
+</tbody>
+</table>
+<p>安装方式:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">安装方式</th>
+<th>介绍</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">minikube</td>
+<td>一个用于快速搭建单节点Kubenetes的工具</td>
+</tr>
+<tr>
+<td style="text-align:center"><strong style="color:red;">kubeadm</strong></td>
+<td>一个用于快速搭建Kubenetes集群的工具(本次安装方式)</td>
+</tr>
+<tr>
+<td style="text-align:center">二进制包</td>
+<td>从官网下载每个组件的二进制包,依次去安装,此方式对于理解Kubenetes组件更加有效</td>
+</tr>
+<tr>
+<td style="text-align:center">kubeKey</td>
+<td>KubeSphere提供的快速搭建Kubenetes集群的工具,并且快速部署KubeSphere</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>本次采用Kubeadm 方式搭建集群</p>
+</blockquote>
+<h4 id="1-系统初始化">1) 系统初始化</h4>
+<ol>
+<li>
+<p>前置准备3 台Linux机器 系统镜像(<a href="https://mirrors.aliyun.com/centos/7/isos/x86_64/CentOS-7-x86_64-DVD-2009.iso?spm=a2c6h.25603864.0.0.159f2d1cXqZu0H">ctrl + 点击👇下载CentOS-7-x86_64-DVD-2009</a>)</p>
+</li>
+<li>
+<p>机器规格: 2C2G(最低配置)</p>
+<blockquote>
+<p>安装VMware后安装3台Linux,参考网上其他教程.</p>
+</blockquote>
+</li>
+</ol>
+<h4 id="2-机器命名">2) 机器命名</h4>
+<p><strong>重要: 后续文章中只会提及名称. 注意区分</strong></p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>IP地址(根据自己实景情况配置地址即可)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Master</td>
+<td>192.168.140.132</td>
+</tr>
+<tr>
+<td>Node1</td>
+<td>...133</td>
+</tr>
+<tr>
+<td>Node2</td>
+<td>...134</td>
+</tr>
+</tbody>
+</table>
+<p>静态配置模版</p>
+<p><code>vim /etc/sysconfig/network-scripts/ifcfg-ens33</code></p>
+<pre><code># 替换
+BOOTPROTO=&quot;dhcp&quot; =&gt; BOOTPROTO=&quot;static&quot;
+
+# 文件内新增
+IPADDR=根据实际情况制定
+GATEWAY=192.168.140.2
+NETMASK=255.255.255.0
+DNS1=192.168.140.2
+</code></pre>
+<p>测试网络是否通畅.得到如下结果表示机器网络通畅</p>
+<pre><code>[root@localhost ~]# ping www.baidu.com
+PING www.a.shifen.com (14.215.177.38) 56(84) bytes of data.
+64 bytes from 14.215.177.38 (14.215.177.38): icmp_seq=1 ttl=128 time=9.29 ms
+64 bytes from 14.215.177.38 (14.215.177.38): icmp_seq=2 ttl=128 time=10.1 ms
+</code></pre>
+<h4 id="3-主机名称解析">3) 主机名称解析</h4>
+<blockquote>
+<p>测试环境下向3台主机追加hosts解析,</p>
+<p>生产环境会搭建DNS服务器,不会手动修改hosts文件</p>
+</blockquote>
+<pre><code class="language-shell">cat &lt;&lt; EOF &gt;&gt;/etc/hosts
+192.168.140.132 master
+192.168.140.133 node1
+192.168.140.134 node2
+EOF
+
+# 三台机器上分开执行
+echo &quot;master&quot; &gt; /etc/hostname
+echo &quot;node1&quot; &gt; /etc/hostname
+echo &quot;node2&quot; &gt; /etc/hostname
+</code></pre>
+<h4 id="4-配置阿里云yum源">4) 配置阿里云yum源</h4>
+<blockquote>
+<p>3台机器都要执行的,注意本次所有操作都是在root账号下执行. 若不是root 建议所有操作前sudo 授权执行,否则会报出意想不到的错误.</p>
+<p>执行前请注意自行备份repo文件</p>
+</blockquote>
+<p>编写配置阿里云yum源文件脚本</p>
+<pre><code class="language-shell">cat &lt;&lt; EOF &gt; temp_init.sh
+# 备份系统原有的repo 文件.
+mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
+
+# 下载阿里云repo文件
+curl -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+
+# 重建缓存
+yum clean all
+yum makecache
+
+yum -y install vim
+if [[ $? -eq 0 ]];then
+echo &quot;vim 编辑器安装成功&quot;
+fi
+EOF
+</code></pre>
+<p>执行脚本</p>
+<pre><code class="language-shell">. temp_init.sh
+</code></pre>
+<h4 id="5-所有机器安装docker">5) 所有机器安装Docker</h4>
+<pre><code class="language-shell">cat &lt;&lt; END &gt; node_install_docker.sh
+
+# --------检查本机是否有旧版本Docker 进行卸载-----------
+sudo yum remove docker \
+                  docker-client \
+                  docker-client-latest \
+                  docker-common \
+                  docker-latest \
+                  docker-latest-logrotate \
+                  docker-logrotate \
+                  docker-engine
+
+# 安装utils,因为yum-config-manager系统默认没有带这个命令,所以需要
+yum -y install yum-utils
+
+# 新增 docker 源文件
+yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+
+# 安装最源文件指定的新版的docker,也可以自己指定版本,通过yum list docker-ce --showduplicates | sort -r 查看当前版本
+yum -y install docker-ce-18.06.0.ce-3.el7 docker-ce-cli-18.06.0.ce-3.el7 containerd.io
+
+# 启动docker 
+systemctl start docker
+
+# 配置Docker 阿里镜像源加速
+# Docker默认情况下使用的Cgroup Driver为cgroupfs,而Kubernetes推荐使用systemd,需要在daemon.json中配置
+sudo mkdir -p /etc/docker
+sudo tee /etc/docker/daemon.json &lt;&lt;-'EOF'
+{
+  &quot;exec-opts&quot;: [&quot;native.cgroupdriver=systemd&quot;],
+  &quot;registry-mirrors&quot;: [&quot;https://19towm9m.mirror.aliyuncs.com&quot;]
+}
+EOF
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+sudo systemctl enable docker
+
+# 运行hello world 镜像查看是否安装成功并且可以正常运行
+docker run hello-world
+
+END
+</code></pre>
+<p>执行脚本</p>
+<pre><code>. node_install_docker.sh
+</code></pre>
+<h4 id="6-时间同步">6) 时间同步</h4>
+<blockquote>
+<p>Kubenetes要求集群中的节点时间必须精确一直,这里直接使用chronyd服务从网络同步时间</p>
+<p>企业生产环境中建议配置内部的时间同步服务器</p>
+</blockquote>
+<pre><code class="language-shell">cat &lt;&lt; EOF &gt; ./start_chronyd.sh
+systemctl start chronyd
+systemctl enable chronyd
+date
+EOF
+
+# 执行
+. start_chronyd.sh
+</code></pre>
+<h4 id="7-关闭系统防火墙等无用服务">7) 关闭系统防火墙等无用服务</h4>
+<blockquote>
+<p>Centos7 默认会有防火墙以及Selinux等服务的开启,这里需要将其进行关闭</p>
+</blockquote>
+<pre><code class="language-shell">cat &lt;&lt; EOF &gt; stop_default_server.sh
+# 关闭防火墙及SELinux等服务
+setenforce 0
+sed -i 's/^SELINUX=enforcing$/SELINUX=disabled/' /etc/selinux/config
+
+# 关闭swap分区
+swapoff -a &amp;&amp; sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+
+# 关闭防火墙
+systemctl stop firewalld
+systemctl disable firewalld
+
+# 关闭iptables(若系统本身并没有安装则不需要)
+# systemctl stop iptables
+# systemctl disable iptables
+
+EOF
+
+# 执行脚本
+. stop_default_server.sh
+</code></pre>
+<p>重启所有主机,并逐个检查配置</p>
+<pre><code class="language-shell">cat &lt;&lt; EOF &gt; ./check.sh
+
+echo -e &quot;\033[32m 检查结果: \033[0m&quot;
+
+# 检查firewalld是否关闭
+systemctl status firewalld | grep &quot;active (running)&quot;
+if [[ $? -eq 0 ]]; then
+	echo -e &quot; firewalld 已关闭,校验完成&quot;
+fi
+
+# 检查selinux 是否关闭
+if [[ getenforce -eq &quot;Disabled&quot; ]]; then
+	echo -e &quot; selinux 已关闭,校验完成&quot;
+fi
+
+cat /etc/selinux/config |grep &quot;SELINUX=disabled&quot; &amp;&gt; /dev/null 
+if [[ $? -eq 0 ]]; then
+	echo -e &quot; selinux/config 已永久修改,校验完成&quot;
+fi
+
+# 检查docker是否启动
+systemctl status docker | grep &quot;active (running)&quot; &amp;&gt; /dev/null 
+if [[ $? -eq 0 ]]; then
+	echo -e &quot; docker 已正常启动,校验完成&quot;
+fi
+EOF
+
+# 执行脚本
+. check.sh
+
+ #检查结果: 
+ #firewalld 已关闭,校验完成
+ #selinux 已关闭,校验完成
+ #selinux/config 已永久修改,校验完成
+ #docker 已正常启动,校验完成
+</code></pre>
+<h4 id="8安装kubekey依赖">8)安装Kubekey依赖</h4>
+<blockquote>
+<p>只在 master 节点安装即可</p>
+</blockquote>
+<pre><code class="language-shell">cat &lt;&lt; EOF &gt; install_kubekey.sh
+yum install -y socat conntrack ebtables ipset
+# 确保您从正确的区域下载 KubeKey，即在国内下载速度更快
+export KKZONE=cn
+# 下载kubekey
+curl -sfL https://get-kk.kubesphere.io | sh 
+EOF
+
+. install_kubekey.sh
+
+</code></pre>
+<h4 id="9启动kubenetes集群">9)启动Kubenetes集群</h4>
+<p>使用KubeKey生成一个k8s集群启动模板k8s.yaml，编辑好账号密码后保存</p>
+<pre><code>./kk create config --with-kubernetes v1.22.1 -f k8s.init.yaml
+</code></pre>
+<p>模板如下：</p>
+<pre><code class="language-go">apiVersion: kubekey.kubesphere.io/v1alpha2
+kind: Cluster
+metadata:
+  name: sample
+spec:
+  hosts:
+  - {name: node1, address: node1的IP地址, internalAddress: node1的IP地址, user: 账号, password: &quot;密码&quot;}
+  - {name: node2, address: node2的IP地址, internalAddress: node2的IP地址, user: 账号, password: &quot;密码&quot;}
+  roleGroups:
+    etcd: # 指定etcd安装到哪个节点上,一般我们将其安装在master 或者单独的一个不工作的节点上只用于存储数据
+    - master
+    control-plane:  # 指定控制器安装在哪个节点上
+    - master 
+    worker:  # 指定工作节点有哪些,对照上面hosts的name值
+    - node1
+    - node2
+  controlPlaneEndpoint:
+    ## Internal loadbalancer for apiservers
+		# 是否开启高可用,如果开启取消下面这句的注释
+    # internalLoadbalancer: haproxy
+
+    domain: lb.kubesphere.local
+    address: &quot;&quot;
+    port: 6443
+  kubernetes:
+    version: v1.22.1
+    clusterName: cluster.local
+    autoRenewCerts: true
+    containerManager: docker
+  etcd:
+    type: kubekey
+  network:
+    plugin: calico
+    kubePodsCIDR: 10.233.64.0/18
+    kubeServiceCIDR: 10.233.0.0/18
+    ## multus support. https://github.com/k8snetworkplumbingwg/multus-cni
+    multusCNI:
+      enabled: false
+  registry:
+    privateRegistry: &quot;&quot;
+    namespaceOverride: &quot;&quot;
+    registryMirrors: []
+    insecureRegistries: []
+  addons: []
+</code></pre>
+<p>执行刚刚的文件</p>
+<pre><code>./kk create cluster -f k8s.init.yaml
+</code></pre>
+<p>安装完成并运行验证</p>
+<pre><code class="language-shell"># 查看所有Pod
+kubectl get pods -A
+</code></pre>
+<p>至此，k8s集群已经搭建完成。</p>
+<h2 id="4-资源管理">4. 资源管理</h2>
+<p>命令行:</p>
+<blockquote>
+<p>通过命令形式操作Kubenetes资源,采用kubectl 命令</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>命令分类</th>
+<th>命令</th>
+<th style="text-align:center">翻译</th>
+<th style="text-align:left">命令作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>基本命令</td>
+<td>create</td>
+<td style="text-align:center">创建</td>
+<td style="text-align:left">创建一个资源</td>
+</tr>
+<tr>
+<td></td>
+<td>edit</td>
+<td style="text-align:center">编辑</td>
+<td style="text-align:left">编辑一个资源</td>
+</tr>
+<tr>
+<td></td>
+<td>get</td>
+<td style="text-align:center">获取</td>
+<td style="text-align:left">获取一个资源</td>
+</tr>
+<tr>
+<td></td>
+<td>patch</td>
+<td style="text-align:center">更新</td>
+<td style="text-align:left">更新一个资源</td>
+</tr>
+<tr>
+<td></td>
+<td>delete</td>
+<td style="text-align:center">删除</td>
+<td style="text-align:left">删除一个资源</td>
+</tr>
+<tr>
+<td></td>
+<td>explain</td>
+<td style="text-align:center">解释</td>
+<td style="text-align:left">展示资源文档</td>
+</tr>
+<tr>
+<td>运行和调试</td>
+<td>run</td>
+<td style="text-align:center">运行</td>
+<td style="text-align:left">在集群中运行一个指定的镜像</td>
+</tr>
+<tr>
+<td></td>
+<td>expose</td>
+<td style="text-align:center">暴露</td>
+<td style="text-align:left">暴露资源为service提供对外服务</td>
+</tr>
+<tr>
+<td></td>
+<td>describe</td>
+<td style="text-align:center">描述</td>
+<td style="text-align:left">显示资源内部信息</td>
+</tr>
+<tr>
+<td></td>
+<td>logs</td>
+<td style="text-align:center">日志</td>
+<td style="text-align:left">输出容器在pod中的日志</td>
+</tr>
+<tr>
+<td></td>
+<td>attach</td>
+<td style="text-align:center">缠绕</td>
+<td style="text-align:left">进入运行中的容器</td>
+</tr>
+<tr>
+<td></td>
+<td>exec</td>
+<td style="text-align:center">执行</td>
+<td style="text-align:left">执行容器中的一个命令</td>
+</tr>
+<tr>
+<td></td>
+<td>cp</td>
+<td style="text-align:center">复制</td>
+<td style="text-align:left">在pod内外的文件</td>
+</tr>
+<tr>
+<td></td>
+<td>rollout</td>
+<td style="text-align:center">首次展示</td>
+<td style="text-align:left">管理资源的发布</td>
+</tr>
+<tr>
+<td></td>
+<td>scale</td>
+<td style="text-align:center">规模</td>
+<td style="text-align:left">扩缩容pod的数量</td>
+</tr>
+<tr>
+<td></td>
+<td>autoscale</td>
+<td style="text-align:center">自动调整</td>
+<td style="text-align:left">自动调整pod数量</td>
+</tr>
+<tr>
+<td>高级命令</td>
+<td>apply</td>
+<td style="text-align:center">rc</td>
+<td style="text-align:left">通过文件对资源进行配置</td>
+</tr>
+<tr>
+<td></td>
+<td>label</td>
+<td style="text-align:center">标签</td>
+<td style="text-align:left">更新资源上的标签</td>
+</tr>
+<tr>
+<td>其他命令</td>
+<td>cluster-info</td>
+<td style="text-align:center">集群信息</td>
+<td style="text-align:left">显示集群信息</td>
+</tr>
+<tr>
+<td></td>
+<td>version</td>
+<td style="text-align:center">版本</td>
+<td style="text-align:left">显示当前server的Client版本</td>
+</tr>
+</tbody>
+</table>
+<h3 id="1-资源类型">1) 资源类型</h3>
+<blockquote>
+<p>Kubenetes中所有的内容都抽象为资源,可以通过下面的命令进行查看:</p>
+</blockquote>
+<pre><code class="language-shell">kubectl api-resources
+</code></pre>
+<p>经常使用的资源有下面这些:</p>
+<table>
+<thead>
+<tr>
+<th>资源分类</th>
+<th>资源名称</th>
+<th>缩写</th>
+<th>资源作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>集群级别资源</td>
+<td>nodes</td>
+<td>no</td>
+<td>集群组成部分如:kubectl get nodes</td>
+</tr>
+<tr>
+<td></td>
+<td>node</td>
+<td></td>
+<td>单只某个节点如:kubectl get node node名称</td>
+</tr>
+<tr>
+<td></td>
+<td>namespace</td>
+<td>ns</td>
+<td>隔离pod</td>
+</tr>
+<tr>
+<td>pod资源</td>
+<td>pods</td>
+<td>po</td>
+<td>pod资源复数如:kubectl get pods</td>
+</tr>
+<tr>
+<td></td>
+<td>pod</td>
+<td></td>
+<td>pod资源单个如:kubectl get pod pod名称</td>
+</tr>
+<tr>
+<td></td>
+<td>replicationcontrollers</td>
+<td>rc</td>
+<td>控制pod资源</td>
+</tr>
+<tr>
+<td></td>
+<td>replicasets</td>
+<td>rs</td>
+<td>控制pod资源</td>
+</tr>
+<tr>
+<td></td>
+<td>deployments</td>
+<td>deploy</td>
+<td>控制pod资源</td>
+</tr>
+<tr>
+<td></td>
+<td>daemonsets</td>
+<td>ds</td>
+<td>控制pod资源</td>
+</tr>
+<tr>
+<td></td>
+<td>jobs</td>
+<td></td>
+<td>控制pod资源</td>
+</tr>
+<tr>
+<td></td>
+<td>cronjobs</td>
+<td>cj</td>
+<td>控制pod资源</td>
+</tr>
+<tr>
+<td></td>
+<td>horizontalpodautoscalers</td>
+<td>hpa</td>
+<td>控制pod资源</td>
+</tr>
+<tr>
+<td>服务发现资源</td>
+<td>service</td>
+<td>svc</td>
+<td>统一pod对外接口</td>
+</tr>
+<tr>
+<td></td>
+<td>ingress</td>
+<td>ing</td>
+<td>统一pod对外接口</td>
+</tr>
+<tr>
+<td>存储资源</td>
+<td>volumeattachments</td>
+<td></td>
+<td>存储</td>
+</tr>
+<tr>
+<td></td>
+<td>persistentvolumes</td>
+<td>pv</td>
+<td>存储</td>
+</tr>
+<tr>
+<td></td>
+<td>persistentvolumeclaims</td>
+<td>pvc</td>
+<td>存储</td>
+</tr>
+<tr>
+<td>配置资源</td>
+<td>configmaps</td>
+<td>cm</td>
+<td>配置</td>
+</tr>
+<tr>
+<td></td>
+<td>secrets</td>
+<td></td>
+<td>配置</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2资源管理方式">2)资源管理方式</h3>
+<ol>
+<li>
+<p>命令对象管理:</p>
+<pre><code class="language-shell">kubectl run nginx-pod --image=nginx:latest --port=80
+</code></pre>
+</li>
+<li>
+<p>命令对象配置文件:</p>
+<pre><code class="language-shell">kubectl create/patch/delete -f nginx-pod.yml
+# 所有配置信息全部写在nginx-pod.yml,通过-f指定文件
+</code></pre>
+</li>
+<li>
+<p>声明对象配置: 通过apply命令按照指定配置文件创建和更新Pod资源(只能创建和更新)</p>
+<pre><code class="language-shell">kubectl apply -f nginx-pod.yml
+</code></pre>
+</li>
+</ol>
+<h3 id="3命令对象配置创建namespacepod">3)命令对象配置创建Namespace/Pod</h3>
+<pre><code class="language-yml">apiVersion: v1
+kind: Namespace
+metadata: 
+	name: dev
+--- # 创建Namespace
+apiVersion: v1
+kind: Pod
+metadata: 
+	# pod名称
+	name: nginx-pod 
+	# pod所在namespace
+	namespace: dev 
+	
+spec:
+	containers: 
+		#容器名称
+    - name: nginx-container1	
+      image: nginx:latest
+      port: 80
+    - name: nginx-container2
+      image: nginx:latest
+			port: 81
+--- # 创建pod并添加容器
+</code></pre>
+<pre><code class="language-shell"># 根据nginx-pod 执行创建
+kc create -f nginx-pod.yml
+
+# 根据nginx-pod 文件删除对应资源
+kc delete -f nginx-pod.yml
+</code></pre>
+<h3 id="4声明对象配置创建和更新namespacepod">4)声明对象配置创建和更新Namespace/Pod</h3>
+<pre><code class="language-shell">kc apply -f nginx-pod.yml
+# 如果已有配置文件的Pod内容,则检查文件是否更新,若更新按照配置文件修改pod资源,若无什么都不做
+</code></pre>
+<h3 id="5-kubectl在node节点执行">5) kubectl在node节点执行</h3>
+<pre><code class="language-shell"># 默认情况下kubectl 在node节点上无法正常执行,这是因为kubectl执行需要.kube目录下的所有文件,可以通过将master节点上~/.kube 复制一份发送到node上的~/即可
+
+# 好消息是,采用上述kubekey搭建的Kubenetes默认就会做同步操作,这里只是记录下不需要进行操作
+</code></pre>
+<h3 id="注意">*)注意</h3>
+<blockquote>
+<p>run 一个pod 资源时需要指定name,不需要添加pod关键字,可以通过下面命令发现,我们没有直接指定pod 资源而是给了名字,这里特殊需要记一下</p>
+<p>如: kubectl run name --image=nginx:latest -n 指定namespace</p>
+</blockquote>
+<blockquote>
+<p>kubectl -&gt; kc 因为在配置文件中做了alias</p>
+</blockquote>
+<h2 id="5-入门讲解">5. 入门讲解</h2>
+<h3 id="1-namespace入门讲解">1. Namespace入门讲解</h3>
+<pre><code class="language-shell">[root@master ~]# kc get ns
+NAME              STATUS   AGE 
+default           Active   18h	# 所有未指定ns的pod都放到default下
+kube-node-lease   Active   18h	# 集群节点之间的心跳维护,v1.13开始引入
+kube-public       Active   18h	# 此命名空间下的资源可以被所有人方位(包括未认证)
+kube-system       Active   18h	# 所有由Kubernetes系统创建的资源都处于这个命名空间中
+kubekey-system    Active   18h
+</code></pre>
+<p>创建ns</p>
+<pre><code class="language-shell">kubectl create ns 名称
+</code></pre>
+<p>删除ns</p>
+<pre><code>kubectl delete ns 名称
+</code></pre>
+<p>yml文件创建和删除ns</p>
+<pre><code class="language-yml">apiVersion: apps/v1
+kind: Namespace
+metadata: 
+  name: dev
+</code></pre>
+<pre><code class="language-shell">[root@master ~]# kc create -f create-ns.yml  # 通过文件创建
+namespace/dev created
+[root@master ~]# kc delete -f create-ns.yml # 通过文件删除
+namespace &quot;dev&quot; deleted
+</code></pre>
+<h3 id="2pod入门讲解">2.Pod入门讲解</h3>
+<p>Pod是Kubenetes集群进行管理的最小单元,程序要运行必须在容器中,容器必须存于Pod.</p>
+<p>一个Pod中存在一个根容器Pause 和多个用户指定的容器</p>
+<p>创建Pod</p>
+<pre><code class="language-shell">kubectl run nginx-pod --image=nginx:latest --port=80
+# 除以上方式还有另外两种创建方式,需要请观察资源管理中的3和4
+</code></pre>
+<p>查询Pod</p>
+<pre><code>kubectl get pods
+# 获取默认namespace下的所有pod信息,如果需要指定namespace可以使用 -n namespace名称
+</code></pre>
+<p>查看Pod详情</p>
+<pre><code>kubectl describe pod nginx-pod
+# kubectl describe pod pod名称
+</code></pre>
+<p>访问Pod服务</p>
+<pre><code>curl podIp:端口
+# 访问服务资源
+</code></pre>
+<h3 id="3label入门讲解">3.Label入门讲解</h3>
+<p>Label用于给指定资源打标签,后续可以通过标签筛选,标签添加在Node,Pod,Service等等</p>
+<p>特点:</p>
+<ol>
+<li>一个Label会以key/value键值对的形式附加到各种对象上</li>
+<li>一个资源对象可以定义任意数量的Label,同一个Label也可以被添加到任意数量的资源对象上去</li>
+<li>Label通常在资源对象定义时确定,当然也可以在对象创建后动态添加或者删除</li>
+</ol>
+<p>为Pod添加Label</p>
+<pre><code>kubectl label pod pod名称 key=value,key2=value,...
+</code></pre>
+<p>为Pod更新Lable</p>
+<pre><code>kubectl lable pod pod名称 key=value --overwriter
+</code></pre>
+<p>查看Pod标签</p>
+<pre><code>kubectl get pod pod名称 --show-labels
+</code></pre>
+<p>筛选标签</p>
+<pre><code>kubectl get pods -l key=value,key!=value
+# 多个条件是并集,且用逗号分隔
+</code></pre>
+<p>删除标签</p>
+<pre><code>kubectl label pod pod名称 key- 
+</code></pre>
+<h3 id="4deployment入门讲解">4.Deployment入门讲解</h3>
+<p>在Kubenetes中,Pod是最小的控制单元,但是Kubernetes很少直接控制Pod,一般都是通过Pod控制器来完成的,Pod控制器用于Pod的管理,确保pod资源符合预期的状态,当Pod的资源出现故障时,会尝试进行重启或者重建Pod</p>
+<p>Pod控制器有很多种,这里只聊Deployment</p>
+<p>创建deployment副本pod</p>
+<pre><code>kc create deployment nginx-pod --image=nginx:latest --port=80 --replicas=3 
+</code></pre>
+<p>删除deployment副本pod</p>
+<pre><code>kc delete deployment nginx-pod
+</code></pre>
+<p>通过yml文件创建,修改和删除</p>
+<pre><code class="language-yml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx  # deployment名称
+spec:
+  replicas: 2  # 副本数量
+  selector:
+    matchLabels:  # 选择标签
+       run: nginx  # template模板区域中对应标签的模版
+  template:
+    metadata:
+      labels:
+        run: nginx  # 定义标签与matchLabels呼应,表示当前模版需要使用到replicas
+    spec:
+      containers:
+      - image: nginx:latest  # pod中管理容器需要使用的镜像
+        name: nginx-container1 # 容器名称
+        ports:
+        - containerPort: 80	# 容器暴漏端口
+          protocol: TCP		# 网络连接协议
+</code></pre>
+<p>编写文件后可执行以下命令</p>
+<pre><code class="language-shell"># 创建
+kubectl create -f deployment.yml 
+# 删除
+kubectl delete -f deployment.yml
+# 创建与更新
+kubectl apply -f deployment.yml
+# 查看pods可以添加-l 根据标签过滤
+kubectl get pods -l run=nginx
+# 查看deployment,可以指定名称,也可以不指定名称
+kubectl get deployment   
+</code></pre>
+<h3 id="4service入门讲解">4.Service入门讲解</h3>
+<p>在原有pod中,每次新建PodIp地址都会随着改变,这就造成了无法直接通过ip地址访问Pod,可能下一秒出现问题,重建个podIp就变了,那么Service就是用来解决代理Pod访问以及负载均衡的作用,</p>
+<p>service图1:<br>
+<img src="http://ggcodec.github.io/post-images/1677345745713.png" alt="" loading="lazy"></p>
+<p>当客户端访问Service使,service 通过selector选择标签的形式找到对应的pod服务,并获取ip进行负载均衡请求,而Service本身整个生命周期中Ip都不会改变.</p>
+<p>创建service暴露服务端口</p>
+<pre><code class="language-shell">[root@master ~]# kc expose deployment nginx --name=svc-nginx1 --type=ClusterIP --port=80 --target-port=80
+
+# expose deployment pod控制器名称
+# --name=svc-nginx1 指定service名称
+# --type=ClusterIP  类型指定为集群IP,仅当前主机能够访问
+# --type=NodePort  类型指定为主机端口映射,外部用户可以访问指定接口,请求服务
+# --port=80			service暴露的端口号
+# --tartget-port=80  目标服务端暴漏的端口号
+
+# 更换类型
+[root@master ~]# kc expose deployment nginx --name=svc-nginx1 --type=NodePort --port=80 --target-port=80
+[root@master ~]# kc get svc
+NAME         TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+kubernetes   ClusterIP   10.233.0.1     &lt;none&gt;        443/TCP        25h
+svc-nginx1   NodePort    10.233.51.62   &lt;none&gt;        80:31008/TCP   2m45s
+
+# 这里可以发现我们创建svc-nginx1 类型选择NodePort后,端口处有两个端口号,80端口是内部暴露端口仅用于内部访问,而外部需要方位31008端口才能请求到服务
+[root@master ~]# curl http://192.168.140.132:31008/
+</code></pre>
+<p>删除service</p>
+<pre><code class="language-shell">kubectl delete svc svc-nginx1
+</code></pre>
+<p>yml文件创建Service</p>
+<pre><code class="language-yml"> 
+</code></pre>
+<h2 id="6pod详解">6.Pod详解</h2>
+<p>Pod结构图:</p>
+<figure data-type="image" tabindex="1"><img src="http://ggcodec.github.io/post-images/1677345766670.png" alt="" loading="lazy"></figure>
+<p>每个Pod中都可以包含一个或者多个容器,这些容器可以分为两类:</p>
+<ul>
+<li>
+<p>用户程序所在的容器,数量可多可少</p>
+</li>
+<li>
+<p>Pause容器,这是每个Pod都会有的一个根容器,他的作用有两个</p>
+<ol>
+<li>
+<p>可以以他为依据,评估整个Pod的健康状态</p>
+</li>
+<li>
+<p>可以在根容器上设置Ip地址,其他容器都以此Ip,实现Pod内部的网路通信</p>
+<blockquote>
+<p>这里Pod内部的通讯,Pod之间的通讯采用虚拟二层网路技术实现我们当前环境是Flannel</p>
+</blockquote>
+</li>
+</ol>
+</li>
+</ul>
+<h3 id="1-pod资源清单">1) Pod资源清单</h3>
+<pre><code class="language-yml">apiVersion: v1     #必选，版本号，例如v1
+kind: Pod       　 #必选，资源类型，例如 Pod
+metadata:       　 #必选，元数据
+  name: string     #必选，Pod名称
+  namespace: string  #Pod所属的命名空间,默认为&quot;default&quot;
+  labels:       　　  #自定义标签列表
+    - name: string      　          
+spec:  #必选，Pod中容器的详细定义
+  containers:  #必选，Pod中容器列表
+  - name: string   #必选，容器名称
+    image: string  #必选，容器的镜像名称
+    imagePullPolicy: [ Always|Never|IfNotPresent ]  #获取镜像的策略 
+    command: [string]   #容器的启动命令列表，如不指定，使用打包时使用的启动命令
+    args: [string]      #容器的启动命令参数列表
+    workingDir: string  #容器的工作目录
+    volumeMounts:       #挂载到容器内部的存储卷配置
+    - name: string      #引用pod定义的共享存储卷的名称，需用volumes[]部分定义的的卷名
+      mountPath: string #存储卷在容器内mount的绝对路径，应少于512字符
+      readOnly: boolean #是否为只读模式
+    ports: #需要暴露的端口库号列表
+    - name: string        #端口的名称
+      containerPort: int  #容器需要监听的端口号
+      hostPort: int       #容器所在主机需要监听的端口号，默认与Container相同
+      protocol: string    #端口协议，支持TCP和UDP，默认TCP
+    env:   #容器运行前需设置的环境变量列表
+    - name: string  #环境变量名称
+      value: string #环境变量的值
+    resources: #资源限制和请求的设置
+      limits:  #资源限制的设置
+        cpu: string     #Cpu的限制，单位为core数，将用于docker run --cpu-shares参数
+        memory: string  #内存限制，单位可以为Mib/Gib，将用于docker run --memory参数
+      requests: #资源请求的设置
+        cpu: string    #Cpu请求，容器启动的初始可用数量
+        memory: string #内存请求,容器启动的初始可用数量
+    lifecycle: #生命周期钩子
+        postStart: #容器启动后立即执行此钩子,如果执行失败,会根据重启策略进行重启
+        preStop: #容器终止前执行此钩子,无论结果如何,容器都会终止
+    livenessProbe:  #对Pod内各容器健康检查的设置，当探测无响应几次后将自动重启该容器
+      exec:       　 #对Pod容器内检查方式设置为exec方式
+        command: [string]  #exec方式需要制定的命令或脚本
+      httpGet:       #对Pod内个容器健康检查方法设置为HttpGet，需要制定Path、port
+        path: string
+        port: number
+        host: string
+        scheme: string
+        HttpHeaders:
+        - name: string
+          value: string
+      tcpSocket:     #对Pod内个容器健康检查方式设置为tcpSocket方式
+         port: number
+       initialDelaySeconds: 0       #容器启动完成后首次探测的时间，单位为秒
+       timeoutSeconds: 0    　　    #对容器健康检查探测等待响应的超时时间，单位秒，默认1秒
+       periodSeconds: 0     　　    #对容器监控检查的定期探测时间设置，单位秒，默认10秒一次
+       successThreshold: 0
+       failureThreshold: 0
+       securityContext:
+         privileged: false
+  restartPolicy: [Always | Never | OnFailure]  #Pod的重启策略
+  nodeName: &lt;string&gt; #设置NodeName表示将该Pod调度到指定到名称的node节点上
+  nodeSelector: obeject #设置NodeSelector表示将该Pod调度到包含这个label的node上
+  imagePullSecrets: #Pull镜像时使用的secret名称，以key：secretkey格式指定
+  - name: string
+  hostNetwork: false   #是否使用主机网络模式，默认为false，如果设置为true，表示使用宿主机网络
+  volumes:   #在该pod上定义共享存储卷列表
+  - name: string    #共享存储卷名称 （volumes类型有很多种）
+    emptyDir: {}       #类型为emtyDir的存储卷，与Pod同生命周期的一个临时目录。为空值
+    hostPath: string   #类型为hostPath的存储卷，表示挂载Pod所在宿主机的目录
+      path: string      　　        #Pod所在宿主机的目录，将被用于同期中mount的目录
+    secret:       　　　#类型为secret的存储卷，挂载集群与定义的secret对象到容器内部
+      scretname: string  
+      items:     
+      - key: string
+        path: string
+    configMap:         #类型为configMap的存储卷，挂载预定义的configMap对象到容器内部
+      name: string
+      items:
+      - key: string
+        path: string
+</code></pre>
+<p>获取Pod资源清单</p>
+<pre><code class="language-shell"># 查看spec下的containers下的资源清单
+kubectl explain pod.spec.containers
+# 查询pod一级属性
+kubectl explain pod
+# 查询 deployment 一级属性
+kubectl explain deployment
+</code></pre>
+<blockquote>
+<p>在 kubernetes 中基本所有资源的一级属性都是一样的，主要包含5部分：</p>
+<ul>
+<li>apiVersion 版本，由 kubernetes 内部定义，版本号必须可以用 kubectl api-versions 查询到</li>
+<li>kind 类型，由 kubernetes 内部定义，类型可以用 kubectl api-resources 查询到</li>
+<li>metadata 元数据，主要是资源标识和说明，常用的有 name、namespace、labels 等</li>
+<li>spec 描述，这是配置中最重要的一部分，里面是对各种资源配置的详细描述</li>
+<li>status 状态信息，里面的内容不需要定义，由 kubernetes 自动生成</li>
+</ul>
+<p>在上面的属性中，spec 是接下来研究的重点，继续看下它的常见子属性:</p>
+<ul>
+<li>containers &lt;[]Object&gt; 容器列表，用于定义容器的详细信息</li>
+<li>nodeName 根据 nodeName 的值将 pod 调度到指定的 Node 节点上</li>
+<li>nodeSelector &lt;map[]&gt; 根据NodeSelector中定义的信息选择将该 Pod 调度到包含这些 label 的 Node 上</li>
+<li>hostNetwork 是否使用主机网络模式，默认为 false，如果设置为 true，表示使用宿主机网络</li>
+<li>volumes &lt;[]Object&gt; 存储卷，用于定义 Pod 上面挂在的存储信息</li>
+<li>restartPolicy 重启策略，表示 Pod 在遇到故障的时候的处理策略</li>
+</ul>
+</blockquote>
+<h3 id="2-实现pod文件多容器运行">2) 实现Pod文件多容器运行</h3>
+<p>创建pod-base.yml文件,内容如下:</p>
+<pre><code class="language-yml">apiVersion: v1
+kind: Deployment
+metadata: 
+	name: pod-base
+	labels: 
+	  school: heima
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      school: heima
+	template:
+    metadata:
+      labels:
+        school: heima
+    spec:
+      containers:
+      - name: nginx
+      	image: nginx:latest
+      	ports: 
+        - containerPort: 80
+      - name: busybox
+      	image: busybox:1.30
+        command: [&quot;/bin/sh&quot;,&quot;-c&quot;,&quot;touch /tmp/hello.txt;while true;do /bin/echo $(date +%T) &gt;&gt; /tmp/hello.txt; sleep 3; done;&quot;]
+
+</code></pre>
+<pre><code class="language-shell">kc apply -f pod-base.yml
+
+# 结果
+[root@master ~]# kc get pods
+NAME                        READY   STATUS    RESTARTS   AGE
+pod-base-86dcff97c4-b6zlz   2/2     Running   0          2m23s
+pod-base-86dcff97c4-g8jsm   2/2     Running   0          2m23s
+</code></pre>
+<p><strong>注意:</strong> 因为busybox是无后台进程的容器,所以我们必须加上command,让后台有程序运行,否则容器会自动关闭.</p>
+<h3 id="3-环境变量">3) 环境变量</h3>
+<pre><code class="language-yml">apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-env
+  namespace: dev
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.30
+    command: [&quot;/bin/sh&quot;,&quot;-c&quot;,&quot;while true;do /bin/echo $(date +%T);sleep 60; done;&quot;]
+    env: # 设置环境变量列表
+    - name: &quot;username&quot;
+      value: &quot;admin&quot;
+    - name: &quot;password&quot;
+      value: &quot;123456&quot;
+</code></pre>
+<p>env 环境变量，用于在pod中的容器设置环境变量。</p>
+<pre><code class="language-shell"># 创建Pod
+[root@k8s-master01 ~]# kubectl create -f pod-env.yaml
+pod/pod-env created
+
+# 进入容器，输出环境变量
+[root@k8s-master01 ~]# kubectl exec pod-env -n dev -c busybox -it /bin/sh
+/ # echo $username
+admin
+/ # echo $password
+123456
+</code></pre>
+<p>提示：这种方式不是很推荐，推荐将这些配置单独存储在配置文件中，这种方式将在后面介绍。</p>
+<h3 id="4-端口设置">4) 端口设置</h3>
+<p>首先看下ports支持的子选项：</p>
+<pre><code class="language-shell">$# kubectl explain pod.spec.containers.ports
+KIND:     Pod
+VERSION:  v1
+RESOURCE: ports &lt;[]Object&gt;
+FIELDS:
+   name         &lt;string&gt;  # 端口名称，如果指定，必须保证name在pod中是唯一的     
+   containerPort&lt;integer&gt; # 容器要监听的端口(0&lt;x&lt;65536)
+   hostPort     &lt;integer&gt; # 容器要在主机上公开的端口，如果设置，主机上只能运行容器的一个副本(一般省略) 
+   hostIP       &lt;string&gt;  # 要将外部端口绑定到的主机IP(一般省略)
+   protocol     &lt;string&gt;  # 端口协议。必须是UDP、TCP或SCTP。默认为“TCP”。
+</code></pre>
+<p>接下来，编写一个测试案例，创建pod-ports.yaml</p>
+<pre><code class="language-yml">apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-ports
+  namespace: dev
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.17.1
+    ports: XX                  # 设置容器暴露的端口列表
+    - name: nginx-port
+      containerPort: 80
+      protocol: TCP
+</code></pre>
+<pre><code class="language-shell"># 创建Pod
+[root@k8s-master01 ~]# kubectl create -f pod-ports.yaml
+pod/pod-ports created
+
+# 查看pod
+# 在下面可以明显看到配置信息
+[root@k8s-master01 ~]# kubectl get pod pod-ports -n dev -o yaml
+......
+spec:
+  containers:
+  - image: nginx:1.17.1
+    imagePullPolicy: IfNotPresent
+    name: nginx
+    ports:
+    - containerPort: 80
+      name: nginx-port
+      protocol: TCP
+......
+</code></pre>
+<h3 id="5-镜像拉取策略">5) 镜像拉取策略</h3>
+<blockquote>
+<p>imagePullPolicy,用于设置镜像拉取策略,Kubenetes支持三种拉取策略</p>
+<p>​	Always: 总是从远程仓库拉取镜像</p>
+<p>​	IfNotPresent: 本地有则使用本地的,本地没有则拉取远程的</p>
+<p>​	Never: 只使用本地镜像,从不去远程仓库拉取</p>
+<p>默认策略(不配置imagePullPolicy字段):</p>
+<p>​	如果镜像版本是具体版本号如1.13.0 ,则默认策略是IfNotPresent</p>
+<p>​	如果镜像版本是latest,则默认策略是Always</p>
+</blockquote>
+<pre><code class="language-yml">apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-env
+  namespace: dev
+spec:
+  containers:
+  - name: busybox
+    image: busybox:1.30
+    imagePullPolicy: Always  # 用于设置拉取镜像策略
+</code></pre>
+<h2 id="疑问">疑问:</h2>
+<p>通过yml创建svc,不能实现ip端口映射无法访问服务,问题如下</p>
+<figure data-type="image" tabindex="2"><img src="http://ggcodec.github.io/post-images/1677345781508.png" alt="" loading="lazy"></figure>
+<h2 id=""></h2>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Hello Gridea]]></title>
+        <id>http://ggcodec.github.io/post/hello-gridea/</id>
+        <link href="http://ggcodec.github.io/post/hello-gridea/">
+        </link>
+        <updated>2018-12-11T16:00:00.000Z</updated>
+        <summary type="html"><![CDATA[<p>👏  欢迎使用 <strong>Gridea</strong> ！<br>
+✍️  <strong>Gridea</strong> 一个静态博客写作客户端。你可以用它来记录你的生活、心情、知识、笔记、创意... ...</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>👏  欢迎使用 <strong>Gridea</strong> ！<br>
+✍️  <strong>Gridea</strong> 一个静态博客写作客户端。你可以用它来记录你的生活、心情、知识、笔记、创意... ...</p>
+<!-- more -->
+<p><a href="https://github.com/getgridea/gridea">Github</a><br>
+<a href="https://gridea.dev/">Gridea 主页</a><br>
+<a href="https://fehey.com/">示例网站</a></p>
+<h2 id="特性">特性👇</h2>
+<p>📝  你可以使用最酷的 <strong>Markdown</strong> 语法，进行快速创作</p>
+<p>🌉  你可以给文章配上精美的封面图和在文章任意位置插入图片</p>
+<p>🏷️  你可以对文章进行标签分组</p>
+<p>📋  你可以自定义菜单，甚至可以创建外部链接菜单</p>
+<p>💻  你可以在 <strong>Windows</strong>，<strong>MacOS</strong> 或 <strong>Linux</strong> 设备上使用此客户端</p>
+<p>🌎  你可以使用 <strong>𝖦𝗂𝗍𝗁𝗎𝖻 𝖯𝖺𝗀𝖾𝗌</strong> 或 <strong>Coding Pages</strong> 向世界展示，未来将支持更多平台</p>
+<p>💬  你可以进行简单的配置，接入 <a href="https://github.com/gitalk/gitalk">Gitalk</a> 或 <a href="https://github.com/SukkaW/DisqusJS">DisqusJS</a> 评论系统</p>
+<p>🇬🇧  你可以使用<strong>中文简体</strong>或<strong>英语</strong></p>
+<p>🌁  你可以任意使用应用内默认主题或任意第三方主题，强大的主题自定义能力</p>
+<p>🖥  你可以自定义源文件夹，利用 OneDrive、百度网盘、iCloud、Dropbox 等进行多设备同步</p>
+<p>🌱 当然 <strong>Gridea</strong> 还很年轻，有很多不足，但请相信，它会不停向前 🏃</p>
+<p>未来，它一定会成为你离不开的伙伴</p>
+<p>尽情发挥你的才华吧！</p>
+<p>😘 Enjoy~</p>
+]]></content>
+    </entry>
+</feed>

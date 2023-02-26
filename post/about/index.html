@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>关于 | haotchen</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="http://ggcodec.github.io/favicon.ico?v=1677422907614">
+<link rel="stylesheet" href="http://ggcodec.github.io/styles/main.css">
+
+
+  
+    <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css" />
+  
+
+  
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="
+欢迎来到我的小站呀，很高兴遇见你！🤝
+
+🏠 关于本站
+95后一枚,个人喜好搭建一个 GitHub Pages 静态博客,用于记录计算机相关学习笔记.
+如果你也想要一个炫酷的博客,也可以参考 👉点击跳转 Gridea 一个轻量化博客搭..." />
+    <meta name="keywords" content="" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="http://ggcodec.github.io">
+        <img src="http://ggcodec.github.io/images/avatar.png?v=1677422907614" class="site-logo">
+        <h1 class="site-title">haotchen</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+          <a class="social-link" href="https://www.github.com/ggcodec/ggcodec.github.io" target="_blank">
+            <i class="fab fa-github"></i>
+          </a>
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      <h4>学习内容一点一滴,温故而知新</h4>
+
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/ggcodec/ggcodec.github.io" target="_blank">haotchen@ggcodec</a> | <a class="rss" href="http://ggcodec.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">关于</h2>
+            <div class="post-date">2019-01-25</div>
+            
+            <div class="post-content" v-pre>
+              <blockquote>
+<p>欢迎来到我的小站呀，很高兴遇见你！🤝</p>
+</blockquote>
+<h2 id="关于本站">🏠 关于本站</h2>
+<p>95后一枚,个人喜好搭建一个 GitHub Pages 静态博客,用于记录计算机相关学习笔记.<br>
+<strong>如果你也想要一个炫酷的博客,也可以参考</strong> <a href="https://github.com/getgridea/gridea">👉点击跳转 Gridea</a> 一个轻量化博客搭建工具.</p>
+<h2 id="博主是谁">👨‍💻 博主是谁</h2>
+<p>CN: 陈浩天<br>
+EN: HaoTChen</p>
+<h2 id="兴趣爱好">⛹ 兴趣爱好</h2>
+<p>学习未知的技术,了解酷比的技术</p>
+<h2 id="联系我呀">📬 联系我呀</h2>
+<p>WX: papn666 (备注博客网站添加哦)<br>
+QQ: 2225995702</p>
+
+            </div>
+            
+            
+
+            
+              
+                <div id="gitalk-container" data-aos="fade-in"></div>
+              
+
+              
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+  
+    <script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+    <script>
+
+      var gitalk = new Gitalk({
+        clientID: '875a5364c81efb07e64c',
+        clientSecret: '7c0bc3d86f9f58dd098174b18d0c652a1f1e72c4',
+        repo: 'ggcodec.github.io',
+        owner: 'ggcodec',
+        admin: ['ggcodec'],
+        id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+        distractionFreeMode: false  // Facebook-like distraction free mode
+      })
+
+      gitalk.render('gitalk-container')
+
+    </script>
+  
+
+  
+
+
+
+
+  </body>
+</html>
